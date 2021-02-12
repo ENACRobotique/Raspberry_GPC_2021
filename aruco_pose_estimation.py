@@ -44,7 +44,7 @@ import time
 
 #--- Define Tag
 #id_to_find  = 72
-marker_size  = 10#- [cm]
+marker_size  = 7#- [cm]
 theta = -70*np.pi/180 # Rotation autour de x_camera en radian
 # Offsets lies à la position de la camera
 offsetX = 0
@@ -59,7 +59,7 @@ posArucoInitDesiree=np.array([0.0, 0, 0])
 FRAME_WIDTH = 1280 #640#1280
 FRAME_HEIGHT = 720 #480#720
 
-rot_camera_to_table = np.array([[1,0,0],[0,np.cos(theta),np.sin(theta)],[0,-np.sin(theta),np.cos(theta)]])
+#rot_camera_to_table = np.array([[1,0,0],[0,np.cos(theta),np.sin(theta)],[0,-np.sin(theta),np.cos(theta)]])
 
 ser = serial.Serial('/dev/ttyAMA0',57600 ,timeout=1)
 
@@ -115,7 +115,7 @@ def get_boussole_color(gray,threshold=127,cutmX=0,cutpX=FRAME_WIDTH,cutmY=0,cutp
     return "White"
 
 def send_data(identifiant,x,y,z,calcul_time):
-    data = "{} {} {} {} {}\n".format(identifiant,x,y,z,calcul_time)
+    data = "i {} {} {} {} {} {}\n".format(-1,identifiant[0],x,y,z,calcul_time)
     print(data)
     #ser.write(str(calcul_time).encode('ascii'))
     ser.write(data.encode('ascii'))
@@ -148,7 +148,6 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT) #720  480
 font = cv2.FONT_HERSHEY_PLAIN
 
 
-#ajout
 def init():
     ret, frame = cap.read()
     global rot_camera_to_table, offset
@@ -168,27 +167,27 @@ def init():
         if (idAr==[ArucoInit]):
             noAr[0]=i
             break
-    marker_size=10
+    aruco_size=10
     print(noAr, corners[noAr[0]])
     #cv2.imshow('im', frame)
     if (noAr[0]>=0):
-        ret = aruco.estimatePoseSingleMarkers([corners[noAr[0]]], marker_size, camera_matrix, camera_distortion)
+        ret = aruco.estimatePoseSingleMarkers([corners[noAr[0]]], aruco_size, camera_matrix, camera_distortion)
         
         #-- Unpack the output, get only the first
         rvec, tvec = ret[0][0,0,:], ret[1][0,0,:]
         
         #-- Draw the detected marker and put a reference frame over it
-        aruco.drawDetectedMarkers(frame, corners)
-        aruco.drawAxis(frame, camera_matrix, camera_distortion, rvec, tvec, 10)
+        #aruco.drawDetectedMarkers(frame, corners)
+        #aruco.drawAxis(frame, camera_matrix, camera_distortion, rvec, tvec, 10)
 
         #-- Print the tag position in camera frame
-        str_position = "MARKER Position x=%4.0f  y=%4.0f  z=%4.0f"%(tvec[0], tvec[1], tvec[2])
-        cv2.putText(frame, str_position, (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        #str_position = "MARKER Position x=%4.0f  y=%4.0f  z=%4.0f"%(tvec[0], tvec[1], tvec[2])
+        #cv2.putText(frame, str_position, (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
         #-- Obtain the rotation matrix tag->camera
         R_ct    = np.matrix(cv2.Rodrigues(rvec)[0])
         R_tc    = R_ct.T 
-        #ajout
+        
         if (idAr==ArucoInit):
         	rot_camera_to_table=np.array(R_flip*R_tc)
         	offset=np.dot(rot_camera_to_table, tvec) -posArucoInitDesiree
